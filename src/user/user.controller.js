@@ -1,11 +1,7 @@
-`use strict`
+'use strict';
 
-import User from "./user.model.js"; // Ajusta la ruta según tu estructura de archivos
+import User from "../models/User.js"; // Ajusta la ruta según tu estructura de archivos
 import mongoose from "mongoose";
-import {checkPassword} from "../../utils/encrypt.js"
-import {generateJwt} from "../../utils/jwt.js"
-import { encrypt } from "../../utils/encrypt.js";
-
 
 // Crear usuario
 export const createUser = async (req, res) => {
@@ -13,7 +9,6 @@ export const createUser = async (req, res) => {
   console.log("-> Creating a new user...");
   try {
     const data = req.body;
-    data.password = await encrypt(data.password)
     const user = new User(data);
     await user.save();
     console.log("-> User successfully created.");
@@ -31,6 +26,7 @@ export const createUser = async (req, res) => {
   }
 };
 
+// Obtener todos los usuarios
 export const getAllUsers = async (req, res) => {
   console.log("User Controller: ");
   console.log("-> Fetching all users...");
@@ -59,6 +55,7 @@ export const getAllUsers = async (req, res) => {
   }
 };
 
+// Obtener usuario por ID
 export const getUserById = async (req, res) => {
   console.log("User Controller: ");
   console.log("-> Fetching user by ID...");
@@ -98,21 +95,15 @@ export const getUserById = async (req, res) => {
   }
 };
 
+// Actualizar usuario
 export const updateUser = async (req, res) => {
   console.log("User Controller: ");
   console.log("-> Updating user...");
   try {
-    const id = req.user.uid;
+    const {id} = req.params;
     const data = req.body;
-    const oldUser = await User.findById(id);
-    if (data.name) oldUser.name = data.name;
-    if (data.lastname) oldUser.lastname = data.lastname;
-    if (data.username) oldUser.username = data.username;
-    if (data.email) oldUser.email = data.email;
-    if (data.age) oldUser.profileImage = data.age;
-    if (data.phone) oldUser.phone = data.phone;
-    if (data.password) oldUser.password = encrypt(data.password);
-    const updatedUser = await User.findByIdAndUpdate(id, oldUser, { new: true });
+
+    const updatedUser = await User.findByIdAndUpdate(id, data, { new: true });
 
     if (!updatedUser) {
       console.log("-> User not found for update.");
@@ -138,91 +129,84 @@ export const updateUser = async (req, res) => {
   }
 };
 
+// Eliminar usuario
 export const deleteUser = async (req, res) => {
   console.log("User Controller: ");
-    console.log("-> Deactivating user...");
-    try {
-      const {id} = req.user;
-  
-      const updatedUser = await User.findByIdAndUpdate(
-        id,
-        {
-          name: "deleted-user",
-          lastname: "deleted-user",
-          username: `deleted-${id}`,
-          email: `deleted-${id}@deleted.com`,
-          status: false,
-        },
-        { new: true }
-      );
-  
-      if (!updatedUser) {
-        console.log("-> User not found for deactivation.");
-        return res.status(404).send({
-          message: "User Controller -> User not found for deactivation.",
-          success: false,
-        });
-      }
-  
-      console.log("-> User successfully deactivated.");
-      return res.send({
-        message: "User Controller -> User successfully deactivated.",
-        success: true,
-        updatedUser,
-      });
-    } catch (error) {
-      console.error("-> An unexpected general error occurred while deactivating the user.", error);
-      return res.status(500).send({
-        message: "User Controller -> An unexpected general error occurred while deactivating the user.",
-        success: false,
-        error,
-      });
-    }
-  };
-  
-
-  // --------------------------------------LOGIN----------------------------------------------
-
-export const login = async (req, res) => {
-  console.log("User Controller: ");
-  console.log("-> Logging user...");
+  console.log("-> Deleting user...");
   try {
-    const { userLogin, password } = req.body;
-    const user = await User.findOne({ 
-        $or: [
-            {email: userLogin},
-            {username: userLogin},
-            {phone: userLogin}
-        ]
-     });
-    if (user && await checkPassword(user.password, password)) {
-      const loggedUser = {
-        uid: user._id,
-        name: user.name,
-        username: user.username,
-        role: user.role,
-      };
-      const token = await generateJwt(loggedUser);
-      console.log(`-> Succesfully logged, welcome ${user.username}.`);
-      return res.send({
-        message: `Auth Controller -> Succesfully logged, welcome ${user.name}`,
-        loggedUser,
-        token,
-        success: true,
+    const {id} = req.params;
+
+    const deletedUser = await User.findByIdAndDelete(id);
+
+    if (!deletedUser) {
+      console.log("-> User not found for deletion.");
+      return res.status(404).send({
+        message: "User Controller -> User not found for deletion.",
+        success: false,
       });
     }
 
-    console.log("-> Could not log in, wrong username or password.");
-    return res.status(400).send({
-      message: "Auth Controller -> Could not log in, wrong username or password.",
-      success: false,
+    console.log("-> User successfully deleted.");
+    return res.send({
+      message: "User Controller -> User successfully deleted.",
+      success: true,
     });
   } catch (error) {
-    console.error("-> An unexpected general error occurred during login.", error);
+    console.error("-> An unexpected general error occurred while deleting the user.", error);
     return res.status(500).send({
-      message: "Auth Controller -> An unexpected general error occurred during login.",
+      message: "User Controller -> An unexpected general error occurred while deleting the user.",
       success: false,
       error,
     });
   }
 };
+
+
+// -------------- EXTRA CRUD FUNCTIONS --------------
+
+// Update user role to admin
+export const updateRole = async(req, res) => {
+  console.log("User Controller: ");
+  console.log("-> Updating user's role...");
+  try {
+    const {id} = req.params;
+
+    const userToUpdate = await User.findById(id);
+
+    if (!userToUpdate) {
+      console.log("-> User not found for update.");
+      return res.status(404).send({
+        message: "User Controller -> User not found for update.",
+        success: false,
+      });
+    }
+
+    userToUpdate.role = req.role;
+
+    const verify = await User.findByIdAndUpdate(id, userToUpdate, {new: true})
+
+    if (!verify) {
+      console.log("-> User cannot be updated.");
+      return res.status(404).send({
+        message: "User Controller -> User cannot be updated.",
+        success: false,
+      });
+    }
+
+    console.log("-> User updated successfully.");
+    return res.send({
+      message: `User Controller -> User's role updated successfully to ${userToUpdate.role}.`,
+      success: true,
+      verify,
+    });
+  } catch (error) {
+    console.error("-> An unexpected general error occurred while updating the user.", error);
+    return res.status(500).send({
+      message: "User Controller -> An unexpected general error occurred while updating the user.",
+      success: false,
+      error,
+    });
+  }
+}
+
+//

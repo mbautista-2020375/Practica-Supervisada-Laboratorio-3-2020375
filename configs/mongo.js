@@ -19,8 +19,6 @@ export const connect = async () => {
 
         mongoose.connection.once('open', async () => {
             console.log(`-> Successfully connected to database: ${process.env.DB_NAME}.`);
-            
-            // Llamar la función para crear el usuario ADMIN si no existe
             await initializeData();
         });
 

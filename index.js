@@ -4,4 +4,4 @@ import { connect } from "./configs/mongo.js";
 
 config()
 initServer()
-connect()
+connect() 
