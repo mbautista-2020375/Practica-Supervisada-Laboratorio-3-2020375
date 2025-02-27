@@ -12,12 +12,13 @@ const userSchema = new Schema(
     },
     username: {
       type: String,
-      required: true
+      required: true,
+      unique: true
     },
     email: { 
       type: String, 
-      required: true, 
-      unique: true 
+      required: true,
+      unique: true
     },
     password: { 
       type: String, 
@@ -25,14 +26,19 @@ const userSchema = new Schema(
     },
     role: { 
       type: String, 
-      enum: ["ADMIN", "CLIENT"], 
-      default: "CLIENT" 
+      enum: ["ADMIN", "REGULAR"], 
+      default: "REGULAR" 
     },
-    address: { 
-      type: String 
+    age: { 
+      type: Number,
+      required: true 
     },
     phone: { 
       type: String 
+    },
+    status: {
+      type: Boolean,
+      default: true
     }
   },
   { timestamps: true }

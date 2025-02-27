@@ -1,7 +1,7 @@
 `use strict`
 
 import Category from "./category.model.js";
-import Publication from "../product/product.model.js"
+import Publication from "../publication/publication.model.js"
 import mongoose from "mongoose";
 
 
@@ -157,7 +157,7 @@ export const deleteCategory = async (req, res) => {
               success: false,
           });
       }
-      await Product.updateMany(
+      await Publication.updateMany(
           { category: id }, 
           { category: defaultCategory._id }
       );
@@ -185,4 +185,3 @@ export const deleteCategory = async (req, res) => {
   }
 };
   
-

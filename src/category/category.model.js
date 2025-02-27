@@ -1,4 +1,5 @@
 import { model, Schema } from "mongoose";
+import { boolean } from "webidl-conversions";
 
 const categorySchema = new Schema(
   {
@@ -8,11 +9,12 @@ const categorySchema = new Schema(
       unique: true 
     },
     description: { 
-      type: String 
+      type: String, 
+      required: true 
     },
-    status: { 
-      type: Boolean, 
-      default: true 
+    status: {
+      type: Boolean,
+      default: true
     }
   },
   { timestamps: true }
